@@ -1,0 +1,24 @@
+education-data-package-r/
+edu-data-server/
+node_modules/
+build/
+*.log
+.env*
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary directories
+tmp/
+temp/
+.cache/
+
+# Build and test directories
+dist/
+coverage/
