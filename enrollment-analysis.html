@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>U.S. School Enrollment Analysis (2010-2020)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        h2 {
+            color: #3498db;
+            margin-top: 30px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        h3 {
+            color: #2980b9;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 30px 0;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        .insights {
+            background-color: #e8f4f8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .insights h2 {
+            color: #2c3e50;
+            border-bottom: 1px solid #bbd8e8;
+        }
+        .insights ul {
+            padding-left: 20px;
+        }
+        .insights li {
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            background-color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .data-source {
+            font-style: italic;
+            color: #7f8c8d;
+            text-align: center;
+            margin-top: 40px;
+        }
+        .two-column {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .column {
+            flex: 1;
+            min-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>U.S. School Enrollment Analysis (2010-2020)</h1>
+        <p>An analysis of enrollment trends in U.S. schools based on data from the Urban Institute's Education Data API</p>
+    </header>
+
+    <section>
+        <h2>Overall Enrollment Trends</h2>
+        <p>
+            Between 2010 and 2020, U.S. school enrollment first increased and then decreased, 
+            returning to slightly below 2010 levels by 2020. The data shows enrollment peaked in 2015 
+            before declining over the next five years.
+        </p>
+        <div class="chart-container">
+            <canvas id="overallTrendsChart"></canvas>
+        </div>
+    </section>
+
+    <section>
+        <h2>Enrollment by Grade Level</h2>
+        <p>
+            Breaking down the enrollment data by grade level reveals interesting patterns. While elementary school 
+            enrollment (K-5) declined significantly between 2015 and 2020, both middle school (6-8) and high school (9-12) 
+            enrollments continued to grow throughout the decade.
+        </p>
+        <div class="chart-container">
+            <canvas id="gradeLevelChart"></canvas>
+        </div>
+    </section>
+
+    <div class="two-column">
+        <div class="column">
+            <section>
+                <h2>2020 Enrollment by Sex</h2>
+                <p>
+                    In 2020, male students slightly outnumbered female students in U.S. schools, with males 
+                    representing 51.3% of the student population and females representing 48.7%.
+                </p>
+                <div class="chart-container">
+                    <canvas id="sexDistributionChart"></canvas>
+                </div>
+            </section>
+        </div>
+        
+        <div class="column">
+            <section class="insights">
+                <h2>Key Insights</h2>
+                <ul>
+                    <li>
+                        <strong>Demographic Shift:</strong> The data reveals a demographic shift in the U.S. school population, 
+                        with declining numbers in elementary grades but increasing numbers in middle and high schools.
+                    </li>
+                    <li>
+                        <strong>Elementary Decline:</strong> The significant drop in elementary enrollment between 2015-2020 
+                        (1.59 million students) suggests fewer children entering the school system in recent years.
+                    </li>
+                    <li>
+                        <strong>Secondary Growth:</strong> The continued growth in middle and high school enrollment reflects 
+                        the progression of larger cohorts that entered the system in earlier years.
+                    </li>
+                    <li>
+                        <strong>Birth Rate Impact:</strong> This pattern could be attributed to declining birth rates in the U.S. 
+                        following the 2008 recession, with those demographic changes now appearing in school enrollment data.
+                    </li>
+                    <li>
+                        <strong>COVID-19 Effect:</strong> The 2020 data may also reflect the beginning impact of the COVID-19 
+                        pandemic, which disrupted education systems nationwide and led some families to delay kindergarten 
+                        enrollment or choose homeschooling.
+                    </li>
+                </ul>
+            </section>
+        </div>
+    </div>
+
+    <section>
+        <h2>Enrollment Data Table</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Year</th>
+                    <th>Elementary (K-5)</th>
+                    <th>Middle (6-8)</th>
+                    <th>High (9-12)</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>2010</td>
+                    <td>22,467,822</td>
+                    <td>11,130,654</td>
+                    <td>14,877,120</td>
+                    <td>49,753,353</td>
+                </tr>
+                <tr>
+                    <td>2015</td>
+                    <td>22,922,989</td>
+                    <td>11,273,475</td>
+                    <td>15,085,089</td>
+                    <td>50,614,563</td>
+                </tr>
+                <tr>
+                    <td>2020</td>
+                    <td>21,332,531</td>
+                    <td>11,551,599</td>
+                    <td>15,323,639</td>
+                    <td>49,422,273</td>
+                </tr>
+                <tr>
+                    <td>Change 2010-2020</td>
+                    <td>-1,135,291</td>
+                    <td>+420,945</td>
+                    <td>+446,519</td>
+                    <td>-331,080</td>
+                </tr>
+                <tr>
+                    <td>Percent Change</td>
+                    <td>-5.1%</td>
+                    <td>+3.8%</td>
+                    <td>+3.0%</td>
+                    <td>-0.7%</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>Enrollment by Sex (2020)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Sex</th>
+                    <th>Enrollment</th>
+                    <th>Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Male</td>
+                    <td>25,340,990</td>
+                    <td>51.3%</td>
+                </tr>
+                <tr>
+                    <td>Female</td>
+                    <td>24,060,172</td>
+                    <td>48.7%</td>
+                </tr>
+                <tr>
+                    <td>Unknown/Other</td>
+                    <td>16,343</td>
+                    <td>0.03%</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <p class="data-source">Data Source: Urban Institute's Education Data API, Common Core of Data (CCD)</p>
+
+    <script>
+        // Overall enrollment trends chart
+        const overallCtx = document.getElementById('overallTrendsChart').getContext('2d');
+        const overallChart = new Chart(overallCtx, {
+            type: 'line',
+            data: {
+                labels: ['2010', '2015', '2020'],
+                datasets: [{
+                    label: 'Total Enrollment (millions)',
+                    data: [49.75, 50.61, 49.42],
+                    backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                    borderColor: 'rgba(52, 152, 219, 1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: 'rgba(52, 152, 219, 1)',
+                    pointRadius: 5,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 49,
+                        max: 51,
+                        title: {
+                            display: true,
+                            text: 'Students (millions)'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'U.S. School Enrollment (2010-2020)',
+                        font: {
+                            size: 16
+                        }
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Grade level enrollment chart
+        const gradeLevelCtx = document.getElementById('gradeLevelChart').getContext('2d');
+        const gradeLevelChart = new Chart(gradeLevelCtx, {
+            type: 'bar',
+            data: {
+                labels: ['2010', '2015', '2020'],
+                datasets: [
+                    {
+                        label: 'Elementary (K-5)',
+                        data: [22.47, 22.92, 21.33],
+                        backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                        borderColor: 'rgba(46, 204, 113, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Middle (6-8)',
+                        data: [11.13, 11.27, 11.55],
+                        backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'High (9-12)',
+                        data: [14.88, 15.09, 15.32],
+                        backgroundColor: 'rgba(155, 89, 182, 0.7)',
+                        borderColor: 'rgba(155, 89, 182, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        title: {
+                            display: true,
+                            text: 'Students (millions)'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Enrollment by Grade Level (2010-2020)',
+                        font: {
+                            size: 16
+                        }
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Sex distribution chart
+        const sexDistributionCtx = document.getElementById('sexDistributionChart').getContext('2d');
+        const sexDistributionChart = new Chart(sexDistributionCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Male', 'Female', 'Unknown/Other'],
+                datasets: [{
+                    data: [51.3, 48.7, 0.03],
+                    backgroundColor: [
+                        'rgba(52, 152, 219, 0.7)',
+                        'rgba(231, 76, 60, 0.7)',
+                        'rgba(241, 196, 15, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(52, 152, 219, 1)',
+                        'rgba(231, 76, 60, 1)',
+                        'rgba(241, 196, 15, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Enrollment by Sex (2020)',
+                        font: {
+                            size: 16
+                        }
+                    },
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${context.raw}%`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
