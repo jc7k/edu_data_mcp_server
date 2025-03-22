@@ -44,7 +44,7 @@ The API is organized by levels (schools, school-districts, college-university), 
    npm run build
    ```
 
-4. (Optional) Make the server available globally:
+4. Make the server available for npx:
    ```
    npm link
    ```
@@ -61,8 +61,8 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 {
   "mcpServers": {
     "edu-data": {
-      "command": "node",
-      "args": ["/path/to/edu-data-mcp-server/build/index.js"],
+      "command": "npx",
+      "args": ["edu-data-mcp-server"],
       "disabled": false,
       "alwaysAllow": []
     }
@@ -78,16 +78,14 @@ Edit `/home/codespace/.vscode-remote/data/User/globalStorage/rooveterinaryinc.ro
 {
   "mcpServers": {
     "edu-data": {
-      "command": "node",
-      "args": ["/path/to/edu-data-mcp-server/build/index.js"],
+      "command": "npx",
+      "args": ["edu-data-mcp-server"],
       "disabled": false,
       "alwaysAllow": []
     }
   }
 }
 ```
-
-Replace `/path/to/edu-data-mcp-server` with the actual path to the server on your system.
 
 ## Available Tools
 
@@ -185,6 +183,12 @@ arguments: {
 
 ## Development
 
+To run the server directly:
+
+```
+npm start
+```
+
 To run the server in watch mode during development:
 
 ```
@@ -195,6 +199,12 @@ To inspect the server's capabilities:
 
 ```
 npm run inspector
+```
+
+To run the server using npx:
+
+```
+npx edu-data-mcp-server
 ```
 
 ## License

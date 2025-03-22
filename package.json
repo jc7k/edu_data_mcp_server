@@ -2,7 +2,6 @@
   "name": "edu-data-mcp-server",
   "version": "0.1.0",
   "description": "public education data package",
-  "private": true,
   "type": "module",
   "bin": {
     "edu-data-mcp-server": "./build/index.js"
@@ -14,7 +13,9 @@
     "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
     "prepare": "npm run build",
     "watch": "tsc --watch",
-    "inspector": "npx @modelcontextprotocol/inspector build/index.js"
+    "inspector": "npx @modelcontextprotocol/inspector build/index.js",
+    "link": "npm link",
+    "start": "edu-data-mcp-server"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "0.6.0",
