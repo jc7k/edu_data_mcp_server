@@ -5,7 +5,7 @@
 /**
  * Urban Institute Education Data API base URL
  */
-export const API_BASE_URL = 'https://educationdata.urban.org/api/v1/';
+export const API_BASE_URL = 'https://educationdata.urban.org/api/v1';
 
 /**
  * Cache configuration

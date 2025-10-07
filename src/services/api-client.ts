@@ -12,17 +12,58 @@ import type { EducationDataRequest, SummaryDataRequest } from '../models/types.j
 
 /**
  * Build URL for education data endpoint
- * Preserves exact behavior from original implementation
+ *
+ * Correct API format: /api/v1/{level}/{source}/{topic}/{year}/[grade-X]/[race-X]/[sex-X]/?filters
+ * Year must be in path (required). Grade, race, sex go in path if provided.
+ * Other filters (fips, leaid, etc.) go in query params.
  */
 export function buildEducationDataUrl(request: EducationDataRequest): string {
-  let url = `${API_BASE_URL}/${request.level}/${request.source}/${request.topic}`;
+  // Extract year from filters (required in path)
+  const filters = { ...(request.filters || {}) };
+  const year = filters.year;
 
-  // Add subtopics if provided
-  if (request.subtopic && Array.isArray(request.subtopic) && request.subtopic.length > 0) {
-    url += `/${request.subtopic.join('/')}`;
+  if (!year) {
+    throw new ApiError('Year is required in filters for Education Data API');
   }
 
-  // Add query parameters
+  // Remove year from filters since it goes in the path
+  delete filters.year;
+
+  // Build base path: /level/source/topic/year
+  let url = `${API_BASE_URL}/${request.level}/${request.source}/${request.topic}/${year}`;
+
+  // Add grade/race/sex as path segments if provided (these are path specifiers, not query params)
+  // These come from filters and must be in specific format: grade-X, race-X, sex-X
+  const pathSpecifiers: string[] = [];
+
+  if (filters.grade !== undefined) {
+    pathSpecifiers.push(`grade-${filters.grade}`);
+    delete filters.grade;
+  }
+
+  if (filters.race !== undefined) {
+    pathSpecifiers.push(`race-${filters.race}`);
+    delete filters.race;
+  }
+
+  if (filters.sex !== undefined) {
+    pathSpecifiers.push(`sex-${filters.sex}`);
+    delete filters.sex;
+  }
+
+  // Add subtopics if provided (these are also path segments)
+  if (request.subtopic && Array.isArray(request.subtopic) && request.subtopic.length > 0) {
+    request.subtopic.forEach(sub => pathSpecifiers.push(sub));
+  }
+
+  if (pathSpecifiers.length > 0) {
+    url += `/${pathSpecifiers.join('/')}`;
+  }
+
+  // Add trailing slash (required by API)
+  url += '/';
+
+  // Add remaining filters as query parameters
   const queryParams = new URLSearchParams();
   queryParams.append('limit', String(request.limit || API_LIMITS.DEFAULT_LIMIT));
 
@@ -30,16 +71,14 @@ export function buildEducationDataUrl(request: EducationDataRequest): string {
     queryParams.append('add_labels', 'true');
   }
 
-  // Add filters
-  if (request.filters && typeof request.filters === 'object') {
-    Object.entries(request.filters).forEach(([key, value]) => {
-      if (Array.isArray(value)) {
-        queryParams.append(key, value.join(','));
-      } else {
-        queryParams.append(key, String(value));
-      }
-    });
-  }
+  // Add remaining filters
+  Object.entries(filters).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      queryParams.append(key, value.join(','));
+    } else {
+      queryParams.append(key, String(value));
+    }
+  });
 
   // Add mode=R to match the R package behavior
   queryParams.append('mode', 'R');
@@ -49,18 +88,32 @@ export function buildEducationDataUrl(request: EducationDataRequest): string {
 
 /**
  * Build URL for summary data endpoint
- * Preserves exact behavior from original implementation
+ *
+ * Format: /api/v1/{level}/{source}/{topic}/{year}/[subtopic]/summaries/?stat=X&var=Y&by=Z
+ * Year is required in filters, stat/var/by are query params
  */
 export function buildSummaryDataUrl(request: SummaryDataRequest): string {
-  let url = `${API_BASE_URL}/${request.level}/${request.source}/${request.topic}`;
+  // Extract year from filters (required in path)
+  const filters = { ...(request.filters || {}) };
+  const year = filters.year;
 
-  // Add subtopic if provided
+  if (!year) {
+    throw new ApiError('Year is required in filters for Education Data API summaries');
+  }
+
+  // Remove year from filters since it goes in the path
+  delete filters.year;
+
+  // Build base path: /level/source/topic/year
+  let url = `${API_BASE_URL}/${request.level}/${request.source}/${request.topic}/${year}`;
+
+  // Add subtopic if provided (path segment before /summaries)
   if (request.subtopic) {
     url += `/${request.subtopic}`;
   }
 
   // Add summaries endpoint
-  url += '/summaries';
+  url += '/summaries/';
 
   // Add query parameters
   const queryParams = new URLSearchParams();
@@ -75,16 +128,14 @@ export function buildSummaryDataUrl(request: SummaryDataRequest): string {
     queryParams.append('by', String(request.by));
   }
 
-  // Add filters
-  if (request.filters && typeof request.filters === 'object') {
-    Object.entries(request.filters).forEach(([key, value]) => {
-      if (Array.isArray(value)) {
-        queryParams.append(key, value.join(','));
-      } else {
-        queryParams.append(key, String(value));
-      }
-    });
-  }
+  // Add remaining filters
+  Object.entries(filters).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      queryParams.append(key, value.join(','));
+    } else {
+      queryParams.append(key, String(value));
+    }
+  });
 
   // Add mode=R to match the R package behavior
   queryParams.append('mode', 'R');
