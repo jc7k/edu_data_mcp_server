@@ -385,10 +385,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const subtopic = args.subtopic ? String(args.subtopic) : undefined;
       const stat = String(args.stat || '');
       const variable = String(args.var || '');
-      const by = args.by || [];
+      const by = args.by;
       const filters = args.filters || {};
-      
-      if (!level || !source || !topic || !stat || !variable || !by) {
+
+      const hasGrouping = Array.isArray(by)
+        ? by.length > 0
+        : typeof by === "string"
+          ? by.trim().length > 0
+          : by !== undefined && by !== null;
+
+      if (!level || !source || !topic || !stat || !variable || !hasGrouping) {
         throw new McpError(
           ErrorCode.InvalidParams,
           "Missing required parameters: level, source, topic, stat, var, and by are required"
@@ -414,6 +420,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         
         if (Array.isArray(by)) {
           queryParams.append("by", by.join(","));
+        } else if (typeof by === "string") {
+          queryParams.append("by", by);
         } else {
           queryParams.append("by", String(by));
         }
