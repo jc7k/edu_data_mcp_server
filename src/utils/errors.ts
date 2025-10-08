@@ -37,6 +37,52 @@ export class ApiError extends Error {
 }
 
 /**
+ * Token limit error thrown when response exceeds token threshold
+ */
+export class TokenLimitError extends Error {
+  constructor(
+    message: string,
+    public estimatedTokens: number,
+    public limit: number,
+    public suggestions?: string[],
+  ) {
+    super(message);
+    this.name = 'TokenLimitError';
+    Object.setPrototypeOf(this, TokenLimitError.prototype);
+  }
+}
+
+/**
+ * Pagination error thrown when pagination parameters are invalid
+ */
+export class PaginationError extends Error {
+  constructor(
+    message: string,
+    public parameterName?: string,
+    public suggestions?: string[],
+  ) {
+    super(message);
+    this.name = 'PaginationError';
+    Object.setPrototypeOf(this, PaginationError.prototype);
+  }
+}
+
+/**
+ * Field selection error thrown when requested fields are invalid
+ */
+export class FieldSelectionError extends Error {
+  constructor(
+    message: string,
+    public invalidFields: string[],
+    public availableFields?: string[],
+  ) {
+    super(message);
+    this.name = 'FieldSelectionError';
+    Object.setPrototypeOf(this, FieldSelectionError.prototype);
+  }
+}
+
+/**
  * Format error for returning to MCP client
  * Sanitizes sensitive information and provides user-friendly messages
  */
@@ -65,6 +111,39 @@ export function formatErrorForClient(error: unknown): string {
     }
     if (error.isRetryable) {
       parts.push('This error may be temporary. Please try again.');
+    }
+    return parts.join('. ');
+  }
+
+  if (error instanceof TokenLimitError) {
+    const parts = [
+      `Response too large: ~${error.estimatedTokens.toLocaleString()} tokens`,
+      `(limit: ${error.limit.toLocaleString()})`,
+    ];
+    if (error.suggestions && error.suggestions.length > 0) {
+      parts.push('Suggestions:');
+      error.suggestions.forEach(s => parts.push(`- ${s}`));
+    }
+    return parts.join(' ');
+  }
+
+  if (error instanceof PaginationError) {
+    const parts = [error.message];
+    if (error.suggestions && error.suggestions.length > 0) {
+      parts.push('Suggestions:');
+      error.suggestions.forEach(s => parts.push(`- ${s}`));
+    }
+    return parts.join(' ');
+  }
+
+  if (error instanceof FieldSelectionError) {
+    const parts = [error.message];
+    if (error.invalidFields.length > 0) {
+      parts.push(`Invalid fields: ${error.invalidFields.join(', ')}`);
+    }
+    if (error.availableFields && error.availableFields.length > 0) {
+      const fieldList = error.availableFields.slice(0, 20).join(', ');
+      parts.push(`Available fields: ${fieldList}${error.availableFields.length > 20 ? ', ...' : ''}`);
     }
     return parts.join('. ');
   }
