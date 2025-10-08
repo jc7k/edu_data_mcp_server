@@ -73,8 +73,8 @@ export const VALIDATION = {
   LEVEL_PATTERN: /^[a-z-]+$/,
   /** Allowed pattern for source parameter (lowercase letters only) */
   SOURCE_PATTERN: /^[a-z]+$/,
-  /** Allowed pattern for topic parameter (lowercase letters and hyphens) */
-  TOPIC_PATTERN: /^[a-z-]+$/,
+  /** Allowed pattern for topic parameter (lowercase letters, numbers, and hyphens) */
+  TOPIC_PATTERN: /^[a-z0-9-]+$/,
 } as const;
 
 /**
