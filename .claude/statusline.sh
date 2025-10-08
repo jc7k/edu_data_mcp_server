@@ -19,12 +19,12 @@ use_color=1
 C() { if [ "$use_color" -eq 1 ]; then printf '\033[%sm' "$1"; fi; }
 RST() { if [ "$use_color" -eq 1 ]; then printf '\033[0m'; fi; }
 
-# ---- modern sleek colors ----
-dir_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;117m'; fi; }    # sky blue
-model_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;147m'; fi; }  # light purple  
-version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;180m'; fi; } # soft yellow
-cc_version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;249m'; fi; } # light gray
-style_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;245m'; fi; } # gray
+# ---- Chinese Palette colors (flatuicolors.com/palette/cn) ----
+dir_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;2;60;64;198m'; fi; }    # Clear Chill #3c40c6
+model_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;2;95;39;205m'; fi; }  # Wild Caribbean Green #5f27cd
+version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;2;254;202;87m'; fi; } # Casandora Yellow #feca57
+cc_version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;2;128;142;155m'; fi; } # Peace #808e9b
+style_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;2;72;84;96m'; fi; } # Cyclone #485460
 rst() { if [ "$use_color" -eq 1 ]; then printf '\033[0m'; fi; }
 
 # ---- time helpers ----
@@ -122,7 +122,7 @@ else
 fi
 
 # ---- git colors ----
-git_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;150m'; fi; }  # soft green
+git_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;2;5;196;107m'; fi; }  # Narenji Orange #05c46b
 rst() { if [ "$use_color" -eq 1 ]; then printf '\033[0m'; fi; }
 
 # ---- git ----
@@ -157,12 +157,26 @@ get_max_context() {
   esac
 }
 
-if [ -n "$session_id" ] && [ "$HAS_JQ" -eq 1 ]; then
+if [ "$HAS_JQ" -eq 1 ]; then
   MAX_CONTEXT=$(get_max_context "$model_name")
-  
+
   # Convert current dir to session file path
-  project_dir=$(echo "$current_dir" | sed "s|~|$HOME|g" | sed 's|/|-|g' | sed 's|^-||')
-  session_file="$HOME/.claude/projects/-${project_dir}/${session_id}.jsonl"
+  # Note: Claude Code converts both / and _ to - when creating project directories
+  project_dir=$(echo "$current_dir" | sed "s|~|$HOME|g" | sed 's|/|-|g' | sed 's|_|-|g' | sed 's|^-||')
+
+  # If session_id is not provided, try to find the most recent session file
+  if [ -z "$session_id" ]; then
+    project_sessions_dir="$HOME/.claude/projects/-${project_dir}"
+    if [ -d "$project_sessions_dir" ]; then
+      # Get the most recently modified .jsonl file
+      most_recent=$(ls -t "$project_sessions_dir"/*.jsonl 2>/dev/null | head -1)
+      if [ -n "$most_recent" ]; then
+        session_file="$most_recent"
+      fi
+    fi
+  else
+    session_file="$HOME/.claude/projects/-${project_dir}/${session_id}.jsonl"
+  fi
   
   if [ -f "$session_file" ]; then
     # Get the latest input token count from the session file
@@ -187,9 +201,9 @@ if [ -n "$session_id" ] && [ "$HAS_JQ" -eq 1 ]; then
 fi
 
 # ---- usage colors ----
-usage_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;189m'; fi; }  # lavender
-cost_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;222m'; fi; }   # light gold
-burn_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;220m'; fi; }   # bright gold
+usage_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;2;15;188;249m'; fi; }  # Electron Blue #0fbcf9
+cost_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;2;248;181;0m'; fi; }   # Rise-N-Shine #f8b500
+burn_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;2;255;99;72m'; fi; }   # Download Progress #ff6348
 session_color() { 
   rem_pct=$(( 100 - session_pct ))
   if   (( rem_pct <= 10 )); then SCLR='38;5;210'  # light pink

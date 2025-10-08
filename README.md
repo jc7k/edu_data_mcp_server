@@ -91,6 +91,35 @@ Edit `/home/codespace/.vscode-remote/data/User/globalStorage/rooveterinaryinc.ro
 }
 ```
 
+### For Claude Code (Local Development)
+
+If you're developing and contributing to this project, you can configure Claude Code to use your local build instead of the published package.
+
+Create or edit `.claude/mcp_config.json` in the project root:
+
+```json
+{
+  "mcpServers": {
+    "edu-data": {
+      "command": "node",
+      "args": ["./build/index.js"]
+    }
+  }
+}
+```
+
+This configuration:
+- Uses your local `build/index.js` directly
+- Automatically picks up changes when you rebuild (`npm run build`)
+- Perfect for testing changes before publishing
+- Use `/mcp` command in Claude Code to reconnect after rebuilding
+
+**Development Workflow:**
+1. Make changes to source code in `src/`
+2. Run `npm run build` to compile
+3. Type `/mcp` in Claude Code to reconnect
+4. Test your changes immediately
+
 ## Available Tools
 
 ### get_education_data
@@ -363,6 +392,34 @@ const totalCount = response.pagination.total_count;
 The server provides resources for browsing available endpoints:
 
 - `edu-data://endpoints/{level}/{source}/{topic}`: Information about a specific education data endpoint
+
+## Supported Endpoints
+
+The server validates requests against a comprehensive whitelist of verified Urban Institute API endpoints. This ensures security while providing access to all major education data sources.
+
+### CCD Endpoints (K-12 Schools)
+- `schools/ccd/enrollment` - Student enrollment data with race/sex breakdowns
+- `schools/ccd/directory` - School directory information
+- `school-districts/ccd/enrollment` - District-level enrollment data
+- `school-districts/ccd/directory` - School district directory information
+
+### IPEDS Endpoints (Higher Education)
+The server supports comprehensive IPEDS data access with the following endpoints:
+
+- `college-university/ipeds/directory` - Institution directory and basic information
+- `college-university/ipeds/institutional-characteristics` - Detailed institutional data
+- `college-university/ipeds/fall-enrollment` - Fall term enrollment counts (FTE and headcount)
+- `college-university/ipeds/enrollment` - General enrollment data with demographics
+- `college-university/ipeds/enrollment-full-time-equivalent` - FTE enrollment calculations
+- `college-university/ipeds/admissions-enrollment` - Admissions and first-year enrollment data
+- `college-university/ipeds/admissions-requirements` - Admissions policies and requirements
+- `college-university/ipeds/completions-cip-2` - Degrees awarded by 2-digit CIP code (broad fields)
+- `college-university/ipeds/completions-cip-6` - Degrees awarded by 6-digit CIP code (detailed programs)
+- `college-university/ipeds/outcome-measures` - Graduation and retention rates
+- `college-university/ipeds/sfa-grants-and-net-price` - Financial aid and net price data
+- `college-university/ipeds/finance` - Institutional financial data
+
+All endpoints support year-based filtering, with IPEDS data generally available from 1980, 1984-2022 (varies by endpoint).
 
 ## Example Usage with Claude
 

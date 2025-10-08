@@ -1,0 +1,173 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Education Data MCP Tools Contract",
+  "description": "MCP tool definitions for Education Data API access after endpoint validation removal",
+  "type": "object",
+  "properties": {
+    "tools": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/GetEducationDataTool"
+          },
+          {
+            "$ref": "#/definitions/GetEducationDataSummaryTool"
+          }
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "GetEducationDataTool": {
+      "type": "object",
+      "required": ["name", "description", "inputSchema"],
+      "properties": {
+        "name": {
+          "const": "get_education_data"
+        },
+        "description": {
+          "const": "Retrieve education data from the Urban Institute's Education Data API. Supports all available endpoints without client-side validation."
+        },
+        "inputSchema": {
+          "type": "object",
+          "required": ["level", "source", "topic"],
+          "properties": {
+            "level": {
+              "type": "string",
+              "description": "API data level (e.g., 'schools', 'school-districts', 'college-university')"
+            },
+            "source": {
+              "type": "string",
+              "description": "API data source (e.g., 'ccd', 'ipeds', 'crdc')"
+            },
+            "topic": {
+              "type": "string",
+              "description": "API data topic (e.g., 'enrollment', 'directory', 'fall-enrollment', 'admissions-enrollment')"
+            },
+            "subtopic": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional list of grouping parameters (e.g., ['race', 'sex'])"
+            },
+            "filters": {
+              "type": "object",
+              "description": "Optional query filters (e.g., {year: 2021, unitid: 133951})"
+            },
+            "add_labels": {
+              "type": "boolean",
+              "description": "Add variable labels when applicable (default: false)"
+            },
+            "limit": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 20,
+              "description": "Records per page (default: 20, max: 1000)"
+            },
+            "page": {
+              "type": "number",
+              "minimum": 1,
+              "description": "Page number (1-indexed). Mutually exclusive with offset."
+            },
+            "offset": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Record offset (0-indexed). Mutually exclusive with page."
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional array of field names to include in response"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "GetEducationDataSummaryTool": {
+      "type": "object",
+      "required": ["name", "description", "inputSchema"],
+      "properties": {
+        "name": {
+          "const": "get_education_data_summary"
+        },
+        "description": {
+          "const": "Retrieve aggregated education data from the Urban Institute's Education Data API. Supports all available endpoints without client-side validation."
+        },
+        "inputSchema": {
+          "type": "object",
+          "required": ["level", "source", "topic", "stat", "var", "by"],
+          "properties": {
+            "level": {
+              "type": "string",
+              "description": "API data level"
+            },
+            "source": {
+              "type": "string",
+              "description": "API data source"
+            },
+            "topic": {
+              "type": "string",
+              "description": "API data topic"
+            },
+            "subtopic": {
+              "type": "string",
+              "description": "Optional additional parameters (only applicable to certain endpoints)"
+            },
+            "stat": {
+              "type": "string",
+              "enum": ["sum", "avg", "count", "median"],
+              "description": "Summary statistic to calculate"
+            },
+            "var": {
+              "type": "string",
+              "description": "Variable to be summarized"
+            },
+            "by": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "description": "Variables to group results by"
+            },
+            "filters": {
+              "type": "object",
+              "description": "Optional query filters"
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Optional array of field names to include in response"
+            },
+            "limit": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 20,
+              "description": "Records per page (default: 20, max: 1000)"
+            },
+            "page": {
+              "type": "number",
+              "minimum": 1,
+              "description": "Page number (1-indexed). Mutually exclusive with offset."
+            },
+            "offset": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Record offset (0-indexed). Mutually exclusive with page."
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  }
+}
