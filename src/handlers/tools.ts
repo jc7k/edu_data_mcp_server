@@ -5,7 +5,11 @@
  */
 
 import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
-import { fetchEducationData, fetchSummaryData } from '../services/api-client.js';
+import {
+  fetchEducationData,
+  fetchSummaryData,
+  calculateApiPage,
+} from '../services/api-client.js';
 import {
   ApiError,
   ValidationError,
@@ -174,16 +178,19 @@ export async function handleGetEducationData(
       limit: validatedRequest.limit,
     });
 
+    // Calculate which API page to fetch based on user's offset
+    const { apiPage, apiOffset } = calculateApiPage(pagination.offset);
+
     // Fetch data from API (returns full API response with count, results, etc.)
-    const apiResponse = await fetchEducationData(validatedRequest);
+    const apiResponse = await fetchEducationData(validatedRequest, apiPage);
 
     // Slice API results to user's requested page
-    // API returns up to 10K records; user may want 20 records starting at offset X
+    // API returns up to 10K records per page; user may want 20 records starting at offset X
     const slicedRecords = sliceApiPage(
       apiResponse.results as Record<string, unknown>[],
       pagination.offset,
       pagination.limit,
-      0, // API offset (we're on API page 1 for now; multi-page support in Phase 4)
+      apiOffset, // Start of this API page (0, 10000, 20000, etc.)
     );
 
     // Validate and apply field selection if requested
@@ -285,15 +292,18 @@ export async function handleGetEducationDataSummary(
       limit: validatedRequest.limit,
     });
 
+    // Calculate which API page to fetch based on user's offset
+    const { apiPage, apiOffset } = calculateApiPage(pagination.offset);
+
     // Fetch data from API (returns full API response with count, results, etc.)
-    const apiResponse = await fetchSummaryData(validatedRequest);
+    const apiResponse = await fetchSummaryData(validatedRequest, apiPage);
 
     // Slice API results to user's requested page
     const slicedRecords = sliceApiPage(
       apiResponse.results as Record<string, unknown>[],
       pagination.offset,
       pagination.limit,
-      0,
+      apiOffset, // Start of this API page (0, 10000, 20000, etc.)
     );
 
     // Validate and apply field selection if requested

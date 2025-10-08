@@ -11,13 +11,32 @@ import { ApiError } from '../utils/errors.js';
 import type { EducationDataRequest, SummaryDataRequest } from '../models/types.js';
 
 /**
+ * Calculate which API page to fetch based on user's offset
+ * API returns 10K records per page, so:
+ * - Offset 0-9999: API page 1
+ * - Offset 10000-19999: API page 2
+ * - Offset 20000-29999: API page 3, etc.
+ *
+ * @param userOffset - User's requested record offset
+ * @returns API page number (1-indexed) and the offset within that API page
+ */
+export function calculateApiPage(userOffset: number): { apiPage: number; apiOffset: number } {
+  const apiPage = Math.floor(userOffset / API_LIMITS.MAX_LIMIT) + 1;
+  const apiOffset = (apiPage - 1) * API_LIMITS.MAX_LIMIT;
+  return { apiPage, apiOffset };
+}
+
+/**
  * Build URL for education data endpoint
  *
  * Correct API format: /api/v1/{level}/{source}/{topic}/{year}/[grade-X]/[race-X]/[sex-X]/?filters
  * Year must be in path (required). Grade, race, sex go in path if provided.
  * Other filters (fips, leaid, etc.) go in query params.
+ *
+ * @param request - Education data request parameters
+ * @param apiPage - Which API page to fetch (1-indexed). API returns 10K records per page.
  */
-export function buildEducationDataUrl(request: EducationDataRequest): string {
+export function buildEducationDataUrl(request: EducationDataRequest, apiPage: number = 1): string {
   // Extract year from filters (required in path)
   const filters = { ...(request.filters || {}) };
   const year = filters.year;
@@ -65,7 +84,13 @@ export function buildEducationDataUrl(request: EducationDataRequest): string {
 
   // Add remaining filters as query parameters
   const queryParams = new URLSearchParams();
-  queryParams.append('limit', String(request.limit || API_LIMITS.DEFAULT_LIMIT));
+  // Always request API's max limit (10K) to get full API page
+  queryParams.append('limit', String(API_LIMITS.MAX_LIMIT));
+
+  // Add API page parameter if not page 1
+  if (apiPage > 1) {
+    queryParams.append('page', String(apiPage));
+  }
 
   if (request.add_labels) {
     queryParams.append('add_labels', 'true');
@@ -91,8 +116,11 @@ export function buildEducationDataUrl(request: EducationDataRequest): string {
  *
  * Format: /api/v1/{level}/{source}/{topic}/{year}/[subtopic]/summaries/?stat=X&var=Y&by=Z
  * Year is required in filters, stat/var/by are query params
+ *
+ * @param request - Summary data request parameters
+ * @param apiPage - Which API page to fetch (1-indexed). API returns 10K records per page.
  */
-export function buildSummaryDataUrl(request: SummaryDataRequest): string {
+export function buildSummaryDataUrl(request: SummaryDataRequest, apiPage: number = 1): string {
   // Extract year from filters (required in path)
   const filters = { ...(request.filters || {}) };
   const year = filters.year;
@@ -117,6 +145,15 @@ export function buildSummaryDataUrl(request: SummaryDataRequest): string {
 
   // Add query parameters
   const queryParams = new URLSearchParams();
+
+  // Always request API's max limit (10K) to get full API page
+  queryParams.append('limit', String(API_LIMITS.MAX_LIMIT));
+
+  // Add API page parameter if not page 1
+  if (apiPage > 1) {
+    queryParams.append('page', String(apiPage));
+  }
+
   queryParams.append('stat', request.stat);
   queryParams.append('var', request.var);
 
@@ -156,9 +193,15 @@ export interface ApiResponse {
 /**
  * Fetch education data from the API
  * Returns full API response including count, results, next/previous
+ *
+ * @param request - Education data request parameters
+ * @param apiPage - Which API page to fetch (1-indexed). Default: 1
  */
-export async function fetchEducationData(request: EducationDataRequest): Promise<ApiResponse> {
-  const url = buildEducationDataUrl(request);
+export async function fetchEducationData(
+  request: EducationDataRequest,
+  apiPage: number = 1,
+): Promise<ApiResponse> {
+  const url = buildEducationDataUrl(request, apiPage);
 
   try {
     const response = await axios.get(url);
@@ -185,9 +228,15 @@ export async function fetchEducationData(request: EducationDataRequest): Promise
 /**
  * Fetch summary data from the API
  * Returns full API response including count, results, next/previous
+ *
+ * @param request - Summary data request parameters
+ * @param apiPage - Which API page to fetch (1-indexed). Default: 1
  */
-export async function fetchSummaryData(request: SummaryDataRequest): Promise<ApiResponse> {
-  const url = buildSummaryDataUrl(request);
+export async function fetchSummaryData(
+  request: SummaryDataRequest,
+  apiPage: number = 1,
+): Promise<ApiResponse> {
+  const url = buildSummaryDataUrl(request, apiPage);
 
   try {
     const response = await axios.get(url);
