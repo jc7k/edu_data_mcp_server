@@ -25,6 +25,10 @@ The API is organized by levels (schools, school-districts, college-university), 
 - Retrieve detailed education data via the `get_education_data` tool
 - Retrieve aggregated education data via the `get_education_data_summary` tool
 - Browse available endpoints via resources
+- **Smart pagination** for large datasets (default 20 records per page)
+- **Field selection** to reduce token usage by requesting only needed fields
+- **Automatic token limit validation** prevents responses exceeding context windows
+- Navigate through millions of records with page-based or offset-based pagination
 
 ## Installation
 
@@ -91,38 +95,80 @@ Edit `/home/codespace/.vscode-remote/data/User/globalStorage/rooveterinaryinc.ro
 
 ### get_education_data
 
-Retrieves detailed education data from the API.
+Retrieves detailed education data from the API with pagination support.
 
-Parameters:
+**Parameters:**
 - `level` (required): API data level to query (e.g., 'schools', 'school-districts', 'college-university')
 - `source` (required): API data source to query (e.g., 'ccd', 'ipeds', 'crdc')
 - `topic` (required): API data topic to query (e.g., 'enrollment', 'directory')
 - `subtopic` (optional): List of grouping parameters (e.g., ['race', 'sex'])
 - `filters` (optional): Query filters (e.g., {year: 2008, grade: [9,10,11,12]})
 - `add_labels` (optional): Add variable labels when applicable (default: false)
-- `limit` (optional): Limit the number of results (default: 100)
 
-Example:
+**Pagination Parameters:**
+- `limit` (optional): Records per page (default: 20, max: 1000)
+- `page` (optional): Page number, 1-indexed (mutually exclusive with `offset`)
+- `offset` (optional): Record offset, 0-indexed (mutually exclusive with `page`)
+- `fields` (optional): Array of field names to include in response (reduces token usage)
+
+**Response Structure:**
+```json
+{
+  "results": [ /* array of records */ ],
+  "pagination": {
+    "total_count": 1000,
+    "current_page": 1,
+    "page_size": 20,
+    "total_pages": 50,
+    "has_more": true,
+    "next_page": 2
+  }
+}
+```
+
+**Basic Example:**
 ```json
 {
   "level": "schools",
   "source": "ccd",
   "topic": "enrollment",
-  "subtopic": ["race", "sex"],
   "filters": {
-    "year": 2008,
-    "grade": [9, 10, 11, 12]
+    "year": 2020,
+    "fips": 6
   },
-  "add_labels": true,
+  "limit": 20
+}
+```
+
+**Pagination Example:**
+```json
+{
+  "level": "schools",
+  "source": "ccd",
+  "topic": "directory",
+  "filters": { "year": 2020 },
+  "page": 2,
   "limit": 50
+}
+```
+
+**Field Selection Example:**
+```json
+{
+  "level": "schools",
+  "source": "ccd",
+  "topic": "directory",
+  "filters": { "year": 2020 },
+  "fields": ["ncessch", "school_name", "city", "state_location"],
+  "limit": 100
 }
 ```
 
 ### get_education_data_summary
 
-Retrieves aggregated education data from the API.
+Retrieves aggregated education data from the API with pagination support.
 
-Parameters:
+**Parameters:**
 - `level` (required): API data level to query
 - `source` (required): API data source to query
 - `topic` (required): API data topic to query
@@ -132,7 +178,15 @@ Parameters:
 - `by` (required): Variables to group results by
 - `filters` (optional): Query filters
 
-Example:
+**Pagination Parameters:**
+- `limit` (optional): Records per page (default: 20, max: 1000)
+- `page` (optional): Page number, 1-indexed (mutually exclusive with `offset`)
+- `offset` (optional): Record offset, 0-indexed (mutually exclusive with `page`)
+- `fields` (optional): Array of field names to include in response
+
+**Response Structure:** Same paginated format as `get_education_data`
+
+**Example:**
 ```json
 {
   "level": "schools",
@@ -144,9 +198,165 @@ Example:
   "filters": {
     "fips": [6, 7, 8],
     "year": [2004, 2005]
+  },
+  "limit": 20
+}
+```
+
+## Pagination Guide
+
+### Why Pagination?
+
+The Education Data API can return datasets with millions of records. Without pagination, responses could exceed 4M tokens, far beyond LLM context windows. This server implements smart pagination to:
+- Keep responses under 10K tokens by default
+- Enable navigation through large datasets
+- Reduce token costs with field selection
+
+### Page vs Offset
+
+Choose the pagination style that fits your use case:
+
+**Page-based (recommended for browsing):**
+```json
+{
+  "page": 1,
+  "limit": 20
+}
+```
+
+**Offset-based (for precise positioning):**
+```json
+{
+  "offset": 100,
+  "limit": 20
+}
+```
+
+**Note:** You cannot specify both `page` and `offset` in the same request.
+
+### Field Selection
+
+Dramatically reduce token usage by requesting only needed fields:
+
+```json
+{
+  "level": "schools",
+  "source": "ccd",
+  "topic": "directory",
+  "filters": { "year": 2020, "fips": 6 },
+  "fields": ["ncessch", "school_name", "enrollment"],
+  "limit": 100
+}
+```
+
+Field selection can reduce response size by 50-97% depending on the dataset.
+
+### Navigating Large Datasets
+
+Use pagination metadata to navigate through results:
+
+```json
+{
+  "results": [...],
+  "pagination": {
+    "total_count": 50000,
+    "current_page": 1,
+    "page_size": 20,
+    "total_pages": 2500,
+    "has_more": true,
+    "next_page": 2
   }
 }
 ```
+
+- `has_more`: Check if more results exist
+- `next_page`: Next page number (or `null` if on last page)
+- `total_pages`: Total pages available
+
+### Best Practices
+
+1. **Start with default limit (20)** - Prevents token overflow
+2. **Use field selection** - Request only needed fields
+3. **Add filters** - Narrow results before increasing limit
+4. **Check `has_more`** - Determine if more pages exist
+5. **Monitor token usage** - Server validates responses stay under 10K tokens
+
+### Multi-Page Navigation
+
+The server automatically handles datasets beyond the API's 10K record page limit:
+
+```json
+{
+  "offset": 15000,
+  "limit": 20
+}
+```
+
+This will:
+1. Fetch API page 2 (records 10000-19999)
+2. Slice to your requested records (15000-15019)
+3. Return paginated response
+
+You can navigate through millions of records seamlessly.
+
+## Migration Guide (v0.0.x → v0.1.0)
+
+### Breaking Changes
+
+**1. Response Structure Changed**
+
+Before (v0.0.x):
+```json
+[
+  { "id": 1, "name": "School A" },
+  { "id": 2, "name": "School B" }
+]
+```
+
+After (v0.1.0):
+```json
+{
+  "results": [
+    { "id": 1, "name": "School A" },
+    { "id": 2, "name": "School B" }
+  ],
+  "pagination": {
+    "total_count": 100,
+    "current_page": 1,
+    "page_size": 2,
+    "total_pages": 50,
+    "has_more": true,
+    "next_page": 2
+  }
+}
+```
+
+**2. Default Limit Reduced**
+
+- Before: 100 records per request
+- After: 20 records per request
+
+**Why:** Prevents 4M token responses that exceed LLM context windows.
+
+**3. New Required Response Parsing**
+
+Update your code to access results:
+
+```javascript
+// Before
+const schools = response;
+
+// After
+const schools = response.results;
+const totalCount = response.pagination.total_count;
+```
+
+### Upgrade Path
+
+1. **Update response parsing** - Access `response.results` instead of treating response as array
+2. **Adjust expectations** - Default returns 20 records instead of 100
+3. **Add pagination** - Use `page` or `offset` parameters to navigate
+4. **Consider field selection** - Use `fields` parameter to reduce token usage
 
 ## Available Resources
 
