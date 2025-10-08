@@ -27,10 +27,24 @@ export const CACHE_CONFIG = {
 export const API_LIMITS = {
   /** Maximum number of results per request */
   MAX_LIMIT: 10000,
-  /** Default number of results if not specified */
-  DEFAULT_LIMIT: 100,
+  /** Default number of results if not specified (reduced from 100 to prevent token overflow) */
+  DEFAULT_LIMIT: 20,
   /** Request timeout in milliseconds (30 seconds) */
   TIMEOUT_MS: 30000,
+  /** Maximum limit for user pagination requests */
+  MAX_USER_LIMIT: 1000,
+} as const;
+
+/**
+ * Token estimation and response size limits
+ */
+export const TOKEN_LIMITS = {
+  /** Approximate characters per token (conservative estimate) */
+  CHARS_PER_TOKEN: 3,
+  /** Maximum estimated tokens per response */
+  MAX_RESPONSE_TOKENS: 10000,
+  /** Warning threshold tokens (80% of max) */
+  WARNING_THRESHOLD_TOKENS: 8000,
 } as const;
 
 /**

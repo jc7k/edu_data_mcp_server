@@ -13,6 +13,46 @@ import { z } from 'zod';
 import { API_LIMITS, VALIDATION } from '../config/constants.js';
 
 /**
+ * Pagination parameters schema with mutual exclusivity validation
+ */
+export const PaginationParamsSchema = z
+  .object({
+    page: z
+      .number()
+      .int('Page must be an integer')
+      .min(1, 'Page must be >= 1')
+      .optional(),
+    limit: z
+      .number()
+      .int('Limit must be an integer')
+      .min(1, 'Limit must be >= 1')
+      .max(API_LIMITS.MAX_USER_LIMIT, `Limit must not exceed ${API_LIMITS.MAX_USER_LIMIT}`)
+      .optional()
+      .default(API_LIMITS.DEFAULT_LIMIT),
+    offset: z
+      .number()
+      .int('Offset must be an integer')
+      .min(0, 'Offset must be >= 0')
+      .optional(),
+  })
+  .refine((data) => !(data.page !== undefined && data.offset !== undefined), {
+    message: 'Cannot specify both page and offset parameters',
+    path: ['page', 'offset'],
+  });
+
+/**
+ * Field selection schema
+ */
+export const FieldSelectionSchema = z.object({
+  fields: z.array(z.string().min(1, 'Field name cannot be empty')).optional(),
+});
+
+/**
+ * Combined request parameters (pagination + field selection)
+ */
+export const RequestParamsSchema = PaginationParamsSchema.merge(FieldSelectionSchema);
+
+/**
  * Schema for education data requests (get_education_data tool)
  */
 export const EducationDataRequestSchema = z.object({
@@ -72,13 +112,30 @@ export const EducationDataRequestSchema = z.object({
 
   add_labels: z.boolean().optional().default(false),
 
+  // Pagination parameters
   limit: z
     .number()
     .int('Limit must be an integer')
-    .positive('Limit must be positive')
-    .max(API_LIMITS.MAX_LIMIT, `Limit must not exceed ${API_LIMITS.MAX_LIMIT}`)
+    .min(1, 'Limit must be >= 1')
+    .max(API_LIMITS.MAX_USER_LIMIT, `Limit must not exceed ${API_LIMITS.MAX_USER_LIMIT}`)
     .optional()
     .default(API_LIMITS.DEFAULT_LIMIT),
+  page: z
+    .number()
+    .int('Page must be an integer')
+    .min(1, 'Page must be >= 1')
+    .optional(),
+  offset: z
+    .number()
+    .int('Offset must be an integer')
+    .min(0, 'Offset must be >= 0')
+    .optional(),
+
+  // Field selection
+  fields: z.array(z.string().min(1, 'Field name cannot be empty')).optional(),
+}).refine((data) => !(data.page !== undefined && data.offset !== undefined), {
+  message: 'Cannot specify both page and offset parameters',
+  path: ['page', 'offset'],
 });
 
 /**
@@ -157,6 +214,31 @@ export const SummaryDataRequestSchema = z.object({
       ]),
     )
     .optional(),
+
+  // Pagination parameters
+  page: z
+    .number()
+    .int('Page must be an integer')
+    .min(1, 'Page must be >= 1')
+    .optional(),
+  offset: z
+    .number()
+    .int('Offset must be an integer')
+    .min(0, 'Offset must be >= 0')
+    .optional(),
+  limit: z
+    .number()
+    .int('Limit must be an integer')
+    .min(1, 'Limit must be >= 1')
+    .max(API_LIMITS.MAX_USER_LIMIT, `Limit must not exceed ${API_LIMITS.MAX_USER_LIMIT}`)
+    .optional()
+    .default(API_LIMITS.DEFAULT_LIMIT),
+
+  // Field selection
+  fields: z.array(z.string().min(1, 'Field name cannot be empty')).optional(),
+}).refine((data) => !(data.page !== undefined && data.offset !== undefined), {
+  message: 'Cannot specify both page and offset parameters',
+  path: ['page', 'offset'],
 });
 
 /**

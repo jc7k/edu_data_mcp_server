@@ -6,9 +6,28 @@
 
 import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 import { fetchEducationData, fetchSummaryData } from '../services/api-client.js';
-import { ApiError, ValidationError, formatErrorForClient } from '../utils/errors.js';
-import { validateEducationDataRequest, validateSummaryDataRequest } from '../services/validator.js';
+import {
+  ApiError,
+  ValidationError,
+  TokenLimitError,
+  PaginationError,
+  FieldSelectionError,
+  formatErrorForClient,
+} from '../utils/errors.js';
+import {
+  validateEducationDataRequest,
+  validateSummaryDataRequest,
+  validatePaginationParams,
+  validateFieldNames,
+} from '../services/validator.js';
+import {
+  formatPaginatedResponse,
+  sliceApiPage,
+  selectFields,
+  estimateTokens,
+} from '../services/response-formatter.js';
 import type { EducationDataRequest, SummaryDataRequest } from '../models/types.js';
+import { TOKEN_LIMITS } from '../config/constants.js';
 
 /**
  * Tool definitions for MCP server
@@ -50,7 +69,22 @@ export const TOOL_DEFINITIONS = [
         },
         limit: {
           type: 'number',
-          description: 'Limit the number of results (default: 100)',
+          description: 'Records per page (default: 20, max: 1000). Reduced from 100 to prevent token overflow.',
+        },
+        page: {
+          type: 'number',
+          description: 'Page number (1-indexed). Mutually exclusive with offset.',
+        },
+        offset: {
+          type: 'number',
+          description: 'Record offset (0-indexed). Mutually exclusive with page.',
+        },
+        fields: {
+          type: 'array',
+          items: {
+            type: 'string',
+          },
+          description: 'Optional array of field names to include in response (reduces token usage).',
         },
       },
       required: ['level', 'source', 'topic'],
@@ -98,6 +132,25 @@ export const TOOL_DEFINITIONS = [
           type: 'object',
           description: 'Optional query filters',
         },
+        limit: {
+          type: 'number',
+          description: 'Records per page (default: 20, max: 1000)',
+        },
+        page: {
+          type: 'number',
+          description: 'Page number (1-indexed). Mutually exclusive with offset.',
+        },
+        offset: {
+          type: 'number',
+          description: 'Record offset (0-indexed). Mutually exclusive with page.',
+        },
+        fields: {
+          type: 'array',
+          items: {
+            type: 'string',
+          },
+          description: 'Optional array of field names to include in response',
+        },
       },
       required: ['level', 'source', 'topic', 'stat', 'var', 'by'],
     },
@@ -105,7 +158,7 @@ export const TOOL_DEFINITIONS = [
 ];
 
 /**
- * Handle get_education_data tool call
+ * Handle get_education_data tool call with pagination support
  */
 export async function handleGetEducationData(
   args: Record<string, unknown>,
@@ -114,18 +167,84 @@ export async function handleGetEducationData(
     // Validate and sanitize input
     const validatedRequest = validateEducationDataRequest(args);
 
-    // Fetch data from API
-    const data = await fetchEducationData(validatedRequest);
+    // Validate and normalize pagination parameters
+    const pagination = validatePaginationParams({
+      page: validatedRequest.page,
+      offset: validatedRequest.offset,
+      limit: validatedRequest.limit,
+    });
+
+    // Fetch data from API (returns full API response with count, results, etc.)
+    const apiResponse = await fetchEducationData(validatedRequest);
+
+    // Slice API results to user's requested page
+    // API returns up to 10K records; user may want 20 records starting at offset X
+    const slicedRecords = sliceApiPage(
+      apiResponse.results as Record<string, unknown>[],
+      pagination.offset,
+      pagination.limit,
+      0, // API offset (we're on API page 1 for now; multi-page support in Phase 4)
+    );
+
+    // Validate and apply field selection if requested
+    let finalRecords: unknown[] = slicedRecords;
+    if (validatedRequest.fields && validatedRequest.fields.length > 0 && slicedRecords.length > 0) {
+      // Validate field names against first record
+      validateFieldNames(validatedRequest.fields, slicedRecords[0]);
+      // Apply field selection
+      finalRecords = selectFields(slicedRecords, validatedRequest.fields);
+    }
+
+    // Format as paginated response
+    const paginatedResponse = formatPaginatedResponse(
+      finalRecords,
+      apiResponse.count,
+      pagination.page,
+      pagination.limit,
+    );
+
+    // Convert to compact JSON (no indentation to save tokens)
+    const jsonResponse = JSON.stringify(paginatedResponse);
+
+    // Validate token count
+    const tokenEstimate = estimateTokens(jsonResponse, TOKEN_LIMITS.MAX_RESPONSE_TOKENS);
+    if (tokenEstimate.exceeds_limit) {
+      throw new TokenLimitError(
+        `Response size exceeds limit`,
+        tokenEstimate.estimated_tokens,
+        TOKEN_LIMITS.MAX_RESPONSE_TOKENS,
+        [
+          `Reduce limit (current: ${pagination.limit})`,
+          `Use field selection to request specific fields`,
+          `Add more filters to narrow results`,
+        ],
+      );
+    }
 
     return {
       content: [
         {
           type: 'text',
-          text: JSON.stringify(data, null, 2),
+          text: jsonResponse,
         },
       ],
     };
   } catch (error) {
+    // Handle pagination errors
+    if (error instanceof PaginationError) {
+      throw new McpError(ErrorCode.InvalidParams, formatErrorForClient(error));
+    }
+
+    // Handle field selection errors
+    if (error instanceof FieldSelectionError) {
+      throw new McpError(ErrorCode.InvalidParams, formatErrorForClient(error));
+    }
+
+    // Handle token limit errors
+    if (error instanceof TokenLimitError) {
+      throw new McpError(ErrorCode.InvalidParams, formatErrorForClient(error));
+    }
+
     // Handle validation errors
     if (error instanceof ValidationError) {
       throw new McpError(ErrorCode.InvalidParams, formatErrorForClient(error));
@@ -150,7 +269,7 @@ export async function handleGetEducationData(
 }
 
 /**
- * Handle get_education_data_summary tool call
+ * Handle get_education_data_summary tool call with pagination support
  */
 export async function handleGetEducationDataSummary(
   args: Record<string, unknown>,
@@ -159,18 +278,81 @@ export async function handleGetEducationDataSummary(
     // Validate and sanitize input
     const validatedRequest = validateSummaryDataRequest(args);
 
-    // Fetch data from API
-    const data = await fetchSummaryData(validatedRequest);
+    // Validate and normalize pagination parameters
+    const pagination = validatePaginationParams({
+      page: validatedRequest.page,
+      offset: validatedRequest.offset,
+      limit: validatedRequest.limit,
+    });
+
+    // Fetch data from API (returns full API response with count, results, etc.)
+    const apiResponse = await fetchSummaryData(validatedRequest);
+
+    // Slice API results to user's requested page
+    const slicedRecords = sliceApiPage(
+      apiResponse.results as Record<string, unknown>[],
+      pagination.offset,
+      pagination.limit,
+      0,
+    );
+
+    // Validate and apply field selection if requested
+    let finalRecords: unknown[] = slicedRecords;
+    if (validatedRequest.fields && validatedRequest.fields.length > 0 && slicedRecords.length > 0) {
+      validateFieldNames(validatedRequest.fields, slicedRecords[0]);
+      finalRecords = selectFields(slicedRecords, validatedRequest.fields);
+    }
+
+    // Format as paginated response
+    const paginatedResponse = formatPaginatedResponse(
+      finalRecords,
+      apiResponse.count,
+      pagination.page,
+      pagination.limit,
+    );
+
+    // Convert to compact JSON
+    const jsonResponse = JSON.stringify(paginatedResponse);
+
+    // Validate token count
+    const tokenEstimate = estimateTokens(jsonResponse, TOKEN_LIMITS.MAX_RESPONSE_TOKENS);
+    if (tokenEstimate.exceeds_limit) {
+      throw new TokenLimitError(
+        `Response size exceeds limit`,
+        tokenEstimate.estimated_tokens,
+        TOKEN_LIMITS.MAX_RESPONSE_TOKENS,
+        [
+          `Reduce limit (current: ${pagination.limit})`,
+          `Use field selection to request specific fields`,
+          `Add more filters to narrow results`,
+        ],
+      );
+    }
 
     return {
       content: [
         {
           type: 'text',
-          text: JSON.stringify(data, null, 2),
+          text: jsonResponse,
         },
       ],
     };
   } catch (error) {
+    // Handle pagination errors
+    if (error instanceof PaginationError) {
+      throw new McpError(ErrorCode.InvalidParams, formatErrorForClient(error));
+    }
+
+    // Handle field selection errors
+    if (error instanceof FieldSelectionError) {
+      throw new McpError(ErrorCode.InvalidParams, formatErrorForClient(error));
+    }
+
+    // Handle token limit errors
+    if (error instanceof TokenLimitError) {
+      throw new McpError(ErrorCode.InvalidParams, formatErrorForClient(error));
+    }
+
     // Handle validation errors
     if (error instanceof ValidationError) {
       throw new McpError(ErrorCode.InvalidParams, formatErrorForClient(error));

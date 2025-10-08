@@ -3,6 +3,66 @@
  */
 
 /**
+ * Pagination control parameters
+ */
+export interface PaginationParams {
+  /** Page number (1-indexed), mutually exclusive with offset */
+  page?: number;
+  /** Records per page (default: 20, max: 1000) */
+  limit?: number;
+  /** Record offset (0-indexed), mutually exclusive with page */
+  offset?: number;
+}
+
+/**
+ * Pagination metadata for navigation
+ */
+export interface PaginationMetadata {
+  /** Total records available across all pages */
+  total_count: number;
+  /** Current page number (1-indexed) */
+  current_page: number;
+  /** Number of records in current response */
+  page_size: number;
+  /** Total pages available with current limit */
+  total_pages: number;
+  /** True if more results exist beyond current page */
+  has_more: boolean;
+  /** Next page number, or null if on last page */
+  next_page: number | null;
+}
+
+/**
+ * Paginated response wrapper
+ */
+export interface PaginatedResponse<T> {
+  /** Array of data records */
+  results: T[];
+  /** Pagination navigation metadata */
+  pagination: PaginationMetadata;
+}
+
+/**
+ * Field selection parameters
+ */
+export interface FieldSelectionParams {
+  /** Optional array of field names to include in response */
+  fields?: string[];
+}
+
+/**
+ * Token estimation metadata
+ */
+export interface TokenEstimate {
+  /** Estimated token count for response */
+  estimated_tokens: number;
+  /** Actual character count of JSON string */
+  character_count: number;
+  /** Whether estimate exceeds threshold */
+  exceeds_limit: boolean;
+}
+
+/**
  * Request parameters for the get_education_data tool
  */
 export interface EducationDataRequest {
@@ -12,7 +72,12 @@ export interface EducationDataRequest {
   subtopic?: string[];
   filters?: Record<string, string | number | string[] | number[]>;
   add_labels?: boolean;
+  // Pagination parameters
   limit?: number;
+  page?: number;
+  offset?: number;
+  // Field selection
+  fields?: string[];
 }
 
 /**
@@ -27,6 +92,12 @@ export interface SummaryDataRequest {
   var: string;
   by: string[];
   filters?: Record<string, string | number | string[] | number[]>;
+  // Pagination parameters
+  page?: number;
+  offset?: number;
+  limit?: number;
+  // Field selection
+  fields?: string[];
 }
 
 /**

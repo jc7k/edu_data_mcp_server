@@ -1,0 +1,444 @@
+# Pagination API Contract
+# Feature: 002-implement-response-size
+# Date: 2025-10-07
+#
+# This document defines the API contract for pagination parameters and response metadata
+# in the Education Data MCP server. It follows OpenAPI 3.0 schema conventions for clarity.
+
+openapi: 3.0.0
+info:
+  title: Education Data MCP Server - Pagination API
+  description: Pagination and field selection contract for MCP tools
+  version: 0.2.0
+
+components:
+  schemas:
+    # ========================================
+    # Request Parameters
+    # ========================================
+
+    PaginationParams:
+      type: object
+      description: |
+        Pagination control parameters.
+        Users can specify either page-based (page + limit) or offset-based (offset + limit) pagination.
+        Cannot specify both page and offset simultaneously.
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          description: |
+            Page number (1-indexed).
+            Mutually exclusive with offset.
+            If omitted, defaults to page 1.
+          example: 1
+
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 20
+          description: |
+            Number of records per page.
+            Default: 20 (changed from previous default of 100)
+            Maximum: 1000
+          example: 20
+
+        offset:
+          type: integer
+          minimum: 0
+          description: |
+            Record offset (0-indexed).
+            Mutually exclusive with page.
+            Calculated as (page - 1) * limit when using page-based pagination.
+          example: 0
+
+      # Validation rules (enforced in code, documented here)
+      x-validation-rules:
+        - Page and offset are mutually exclusive
+        - If both page and offset are provided, return validation error
+        - If page is provided, offset = (page - 1) * limit
+        - If offset is provided, page = floor(offset / limit) + 1
+
+    FieldSelectionParams:
+      type: object
+      description: Optional field filtering to reduce response size
+      properties:
+        fields:
+          type: array
+          items:
+            type: string
+          description: |
+            Array of field names to include in response.
+            If omitted or empty, all fields are returned (backward compatible).
+            Invalid field names will result in validation error with available fields list.
+          example: ['name', 'enrollment', 'city', 'state_location']
+
+      x-validation-rules:
+        - Field names are case-sensitive
+        - Unknown fields result in error with available field list
+        - Empty array is treated same as omitted (returns all fields)
+
+    CombinedRequestParams:
+      allOf:
+        - $ref: '#/components/schemas/PaginationParams'
+        - $ref: '#/components/schemas/FieldSelectionParams'
+      description: |
+        Combined pagination and field selection parameters.
+        Used in tool input schemas for get_education_data and get_education_data_summary.
+
+    # ========================================
+    # Response Structures
+    # ========================================
+
+    PaginationMetadata:
+      type: object
+      required:
+        - total_count
+        - current_page
+        - page_size
+        - total_pages
+        - has_more
+        - next_page
+      description: Navigation metadata for paginated responses
+      properties:
+        total_count:
+          type: integer
+          minimum: 0
+          description: Total number of records available across all pages
+          example: 101662
+
+        current_page:
+          type: integer
+          minimum: 1
+          description: Current page number (1-indexed)
+          example: 1
+
+        page_size:
+          type: integer
+          minimum: 0
+          description: |
+            Number of records in the current response.
+            May be less than requested limit on the last page.
+          example: 20
+
+        total_pages:
+          type: integer
+          minimum: 0
+          description: Total number of pages available with current limit
+          example: 5084
+
+        has_more:
+          type: boolean
+          description: |
+            Boolean indicating whether more results are available.
+            Equivalent to: current_page < total_pages
+          example: true
+
+        next_page:
+          type: integer
+          nullable: true
+          minimum: 1
+          description: |
+            Next page number, or null if on the last page.
+            Null when has_more is false.
+          example: 2
+
+    PaginatedResponse:
+      type: object
+      required:
+        - results
+        - pagination
+      description: |
+        Standard response wrapper for all paginated API calls.
+        Replaces previous behavior of returning results array directly.
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+          description: |
+            Array of data records.
+            Type varies by endpoint (schools, districts, summaries, etc.).
+            May be filtered by fields parameter if provided.
+          example:
+            - ncessch: "010000500871"
+              name: "Albertville Elementary School"
+              enrollment: 684
+            - ncessch: "010000500872"
+              name: "Albertville High School"
+              enrollment: 1245
+
+        pagination:
+          $ref: '#/components/schemas/PaginationMetadata'
+
+    # ========================================
+    # Error Responses
+    # ========================================
+
+    PaginationError:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          enum:
+            - invalid_params
+            - response_too_large
+            - page_out_of_range
+          description: Error type identifier
+          example: "invalid_params"
+
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Cannot specify both page and offset parameters"
+
+        details:
+          type: object
+          description: Additional error context (optional)
+          properties:
+            field:
+              type: string
+              description: Field that caused the error
+              example: "page"
+
+            provided_value:
+              type: string
+              description: Invalid value that was provided
+              example: "page=2, offset=40"
+
+            suggestion:
+              type: string
+              description: Suggested fix
+              example: "Use either page or offset, not both"
+
+    TokenLimitError:
+      type: object
+      required:
+        - error
+        - message
+        - estimated_tokens
+        - limit
+      properties:
+        error:
+          type: string
+          enum: ["response_too_large"]
+          example: "response_too_large"
+
+        message:
+          type: string
+          example: "Response too large: ~15,000 tokens (limit: 10,000)"
+
+        estimated_tokens:
+          type: integer
+          description: Estimated token count of the response
+          example: 15000
+
+        limit:
+          type: integer
+          description: Configured token limit
+          example: 10000
+
+        suggestions:
+          type: array
+          items:
+            type: string
+          description: Ways to reduce response size
+          example:
+            - "Reduce limit parameter (currently: 50)"
+            - "Use field selection to request specific fields"
+            - "Add more filters to reduce total_count"
+
+  # ========================================
+  # Example Request/Response Pairs
+  # ========================================
+
+  examples:
+    BasicPaginationRequest:
+      summary: Basic paginated request (page 1)
+      value:
+        level: "schools"
+        source: "ccd"
+        topic: "directory"
+        filters:
+          year: 2020
+          state_location: "AL"
+        page: 1
+        limit: 20
+
+    BasicPaginationResponse:
+      summary: Paginated response with 20 records
+      value:
+        results:
+          - ncessch: "010000500871"
+            name: "Albertville Elementary School"
+            enrollment: 684
+            city: "Albertville"
+            state_location: "AL"
+          - ncessch: "010000500872"
+            name: "Albertville High School"
+            enrollment: 1245
+            city: "Albertville"
+            state_location: "AL"
+          # ... 18 more records
+        pagination:
+          total_count: 101662
+          current_page: 1
+          page_size: 20
+          total_pages: 5084
+          has_more: true
+          next_page: 2
+
+    FieldSelectionRequest:
+      summary: Request with field selection (reduce token usage)
+      value:
+        level: "schools"
+        source: "ccd"
+        topic: "directory"
+        filters:
+          year: 2020
+        page: 1
+        limit: 20
+        fields: ["name", "enrollment"]
+
+    FieldSelectionResponse:
+      summary: Response with only requested fields
+      value:
+        results:
+          - name: "Albertville Elementary School"
+            enrollment: 684
+          - name: "Albertville High School"
+            enrollment: 1245
+          # ... 18 more records (only 2 fields each)
+        pagination:
+          total_count: 101662
+          current_page: 1
+          page_size: 20
+          total_pages: 5084
+          has_more: true
+          next_page: 2
+
+    OffsetPaginationRequest:
+      summary: Offset-based pagination (alternative to page)
+      value:
+        level: "schools"
+        source: "ccd"
+        topic: "enrollment"
+        filters:
+          year: 2020
+        offset: 40
+        limit: 20
+
+    LastPageResponse:
+      summary: Response for the last page (has_more=false)
+      value:
+        results:
+          - ncessch: "999999999999"
+            name: "Last School"
+            enrollment: 100
+          # Only 2 records on last page
+        pagination:
+          total_count: 101662
+          current_page: 5084
+          page_size: 2
+          total_pages: 5084
+          has_more: false
+          next_page: null
+
+    EmptyResultsResponse:
+      summary: Response when no results match filters
+      value:
+        results: []
+        pagination:
+          total_count: 0
+          current_page: 1
+          page_size: 0
+          total_pages: 0
+          has_more: false
+          next_page: null
+
+    ValidationErrorExample:
+      summary: Error when both page and offset are provided
+      value:
+        error: "invalid_params"
+        message: "Cannot specify both page and offset parameters"
+        details:
+          field: "pagination"
+          provided_value: "page=2, offset=40"
+          suggestion: "Use either page or offset, not both"
+
+    TokenLimitErrorExample:
+      summary: Error when response exceeds token limit
+      value:
+        error: "response_too_large"
+        message: "Response too large: ~15,000 tokens (limit: 10,000)"
+        estimated_tokens: 15000
+        limit: 10000
+        suggestions:
+          - "Reduce limit parameter (currently: 100)"
+          - "Use field selection to request specific fields"
+          - "Add more filters to reduce total_count"
+
+# ========================================
+# Contract Change Log
+# ========================================
+x-changelog:
+  - version: "0.2.0"
+    date: "2025-10-07"
+    changes:
+      - "BREAKING: Default limit changed from 100 to 20"
+      - "BREAKING: Response structure changed from array to {results, pagination}"
+      - "Added: page parameter for page-based pagination"
+      - "Added: offset parameter for offset-based pagination"
+      - "Added: fields parameter for field selection"
+      - "Added: PaginationMetadata in all responses"
+      - "Added: Token limit validation and error responses"
+
+# ========================================
+# Backward Compatibility Notes
+# ========================================
+x-compatibility:
+  breaking_changes:
+    - change: "Response structure"
+      before: "Returns array of records directly"
+      after: "Returns {results: [...], pagination: {...}}"
+      migration: "Update response parsing to access .results property"
+
+    - change: "Default limit value"
+      before: "100 records"
+      after: "20 records"
+      migration: "Explicitly set limit=100 if needed, or adjust to smaller pages"
+
+  non_breaking_additions:
+    - "page parameter (optional)"
+    - "offset parameter (optional)"
+    - "fields parameter (optional)"
+    - "All existing parameters still supported"
+
+# ========================================
+# Implementation Notes
+# ========================================
+x-implementation:
+  token_estimation:
+    method: "Character-based approximation"
+    formula: "tokens ≈ characters / 3"
+    accuracy: "±15% for JSON responses"
+    reason: "No accurate TypeScript tokenizer available for Claude 3+"
+
+  api_pagination:
+    external_api_limit: 10000
+    note: "Urban Institute API returns maximum 10,000 records per page, ignoring smaller limit values"
+    strategy: "Client-side slicing of API's 10K pages into user's requested page size"
+
+  field_selection:
+    implementation: "Client-side filtering (API does not support field selection)"
+    validation: "Dynamic validation against actual response structure"
+    fallback: "If fields parameter omitted, return all fields (backward compatible)"
+
+  caching:
+    strategy: "Optional LRU cache for API pages to reduce refetching"
+    ttl: "5 minutes (from existing constants)"
+    scope: "API page level (10,000 record chunks)"

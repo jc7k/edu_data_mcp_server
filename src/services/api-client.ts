@@ -144,15 +144,32 @@ export function buildSummaryDataUrl(request: SummaryDataRequest): string {
 }
 
 /**
- * Fetch education data from the API
- * Preserves exact behavior from original implementation
+ * API response structure from Urban Institute Education Data API
  */
-export async function fetchEducationData(request: EducationDataRequest): Promise<unknown> {
+export interface ApiResponse {
+  results: unknown[];
+  count: number;
+  next: string | null;
+  previous: string | null;
+}
+
+/**
+ * Fetch education data from the API
+ * Returns full API response including count, results, next/previous
+ */
+export async function fetchEducationData(request: EducationDataRequest): Promise<ApiResponse> {
   const url = buildEducationDataUrl(request);
 
   try {
     const response = await axios.get(url);
-    return response.data.results || response.data;
+
+    // API returns { results: [...], count: N, next: url, previous: url }
+    return {
+      results: response.data.results || [],
+      count: response.data.count || 0,
+      next: response.data.next || null,
+      previous: response.data.previous || null,
+    };
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw mapAxiosError(
@@ -167,14 +184,21 @@ export async function fetchEducationData(request: EducationDataRequest): Promise
 
 /**
  * Fetch summary data from the API
- * Preserves exact behavior from original implementation
+ * Returns full API response including count, results, next/previous
  */
-export async function fetchSummaryData(request: SummaryDataRequest): Promise<unknown> {
+export async function fetchSummaryData(request: SummaryDataRequest): Promise<ApiResponse> {
   const url = buildSummaryDataUrl(request);
 
   try {
     const response = await axios.get(url);
-    return response.data.results || response.data;
+
+    // API returns { results: [...], count: N, next: url, previous: url }
+    return {
+      results: response.data.results || [],
+      count: response.data.count || 0,
+      next: response.data.next || null,
+      previous: response.data.previous || null,
+    };
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const endpointPath = request.subtopic
