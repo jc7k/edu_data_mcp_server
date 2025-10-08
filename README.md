@@ -91,6 +91,35 @@ Edit `/home/codespace/.vscode-remote/data/User/globalStorage/rooveterinaryinc.ro
 }
 ```
 
+### For Claude Code (Local Development)
+
+If you're developing and contributing to this project, you can configure Claude Code to use your local build instead of the published package.
+
+Create or edit `.claude/mcp_config.json` in the project root:
+
+```json
+{
+  "mcpServers": {
+    "edu-data": {
+      "command": "node",
+      "args": ["./build/index.js"]
+    }
+  }
+}
+```
+
+This configuration:
+- Uses your local `build/index.js` directly
+- Automatically picks up changes when you rebuild (`npm run build`)
+- Perfect for testing changes before publishing
+- Use `/mcp` command in Claude Code to reconnect after rebuilding
+
+**Development Workflow:**
+1. Make changes to source code in `src/`
+2. Run `npm run build` to compile
+3. Type `/mcp` in Claude Code to reconnect
+4. Test your changes immediately
+
 ## Available Tools
 
 ### get_education_data
