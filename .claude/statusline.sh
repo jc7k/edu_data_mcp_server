@@ -157,13 +157,26 @@ get_max_context() {
   esac
 }
 
-if [ -n "$session_id" ] && [ "$HAS_JQ" -eq 1 ]; then
+if [ "$HAS_JQ" -eq 1 ]; then
   MAX_CONTEXT=$(get_max_context "$model_name")
-  
+
   # Convert current dir to session file path
   # Note: Claude Code converts both / and _ to - when creating project directories
   project_dir=$(echo "$current_dir" | sed "s|~|$HOME|g" | sed 's|/|-|g' | sed 's|_|-|g' | sed 's|^-||')
-  session_file="$HOME/.claude/projects/-${project_dir}/${session_id}.jsonl"
+
+  # If session_id is not provided, try to find the most recent session file
+  if [ -z "$session_id" ]; then
+    project_sessions_dir="$HOME/.claude/projects/-${project_dir}"
+    if [ -d "$project_sessions_dir" ]; then
+      # Get the most recently modified .jsonl file
+      most_recent=$(ls -t "$project_sessions_dir"/*.jsonl 2>/dev/null | head -1)
+      if [ -n "$most_recent" ]; then
+        session_file="$most_recent"
+      fi
+    fi
+  else
+    session_file="$HOME/.claude/projects/-${project_dir}/${session_id}.jsonl"
+  fi
   
   if [ -f "$session_file" ]; then
     # Get the latest input token count from the session file
