@@ -19,8 +19,8 @@
 
 - [x] T001 Verify AVAILABLE_ENDPOINTS array in src/config/endpoints.ts contains all 16 endpoints
 - [x] T002 Verify project builds successfully with expanded whitelist
-- [ ] T003 Review src/services/validator.ts to confirm validateEndpoint() is active and using expanded whitelist
-- [ ] T004 [P] Check CHANGELOG.md has proper documentation of the expanded endpoints
+- [x] T003 Review src/services/validator.ts to confirm validateEndpoint() is active and using expanded whitelist
+- [x] T004 [P] Check CHANGELOG.md has proper documentation of the expanded endpoints
 
 **Checkpoint**: Current state is verified - endpoint expansion is complete
 
@@ -34,13 +34,13 @@
 
 ### Verification for User Story 1
 
-- [ ] T005 [US1] Test college-university/ipeds/fall-enrollment endpoint with real API call (filters: year=2021, unitid=133951, limit=5)
-- [ ] T006 [P] [US1] Test college-university/ipeds/institutional-characteristics endpoint with real API call
-- [ ] T007 [P] [US1] Test college-university/ipeds/admissions-enrollment endpoint with real API call
-- [ ] T008 [P] [US1] Test college-university/ipeds/completions-cip-2 endpoint with real API call
-- [ ] T009 [P] [US1] Test college-university/ipeds/enrollment endpoint with real API call
-- [ ] T010 [P] [US1] Test college-university/ipeds/outcome-measures endpoint with real API call
-- [ ] T011 [P] [US1] Verify all 11 new IPEDS endpoints pass validateEndpoint() checks
+- [x] T005 [US1] Test college-university/ipeds/fall-enrollment endpoint with real API call (filters: year=2021, unitid=133951, limit=5)
+- [x] T006 [P] [US1] Test college-university/ipeds/institutional-characteristics endpoint with real API call
+- [x] T007 [P] [US1] Test college-university/ipeds/admissions-enrollment endpoint with real API call
+- [x] T008 [P] [US1] Test college-university/ipeds/completions-cip-2 endpoint with real API call
+- [x] T009 [P] [US1] Test college-university/ipeds/enrollment endpoint with real API call
+- [x] T010 [P] [US1] Test college-university/ipeds/outcome-measures endpoint with real API call
+- [x] T011 [P] [US1] Verify all 11 new IPEDS endpoints pass validateEndpoint() checks
 
 **Checkpoint**: All new IPEDS endpoints are accessible and return data successfully
 
@@ -54,11 +54,11 @@
 
 ### Verification for User Story 2
 
-- [ ] T012 [P] [US2] Regression test schools/ccd/enrollment endpoint (year=2020, grade=9, limit=5)
-- [ ] T013 [P] [US2] Regression test schools/ccd/directory endpoint (year=2020, limit=5)
-- [ ] T014 [P] [US2] Regression test school-districts/ccd/enrollment endpoint (year=2020, limit=5)
-- [ ] T015 [P] [US2] Regression test college-university/ipeds/directory endpoint (year=2020, limit=5)
-- [ ] T016 [US2] Verify no regression in response format or error handling
+- [x] T012 [P] [US2] Regression test schools/ccd/enrollment endpoint (year=2020, grade=9, limit=5)
+- [x] T013 [P] [US2] Regression test schools/ccd/directory endpoint (year=2020, limit=5)
+- [x] T014 [P] [US2] Regression test school-districts/ccd/enrollment endpoint (year=2020, limit=5)
+- [x] T015 [P] [US2] Regression test college-university/ipeds/directory endpoint (year=2020, limit=5)
+- [x] T016 [US2] Verify no regression in response format or error handling
 
 **Checkpoint**: Backward compatibility confirmed - all original endpoints work identically
 
@@ -72,10 +72,10 @@
 
 ### Verification for User Story 3
 
-- [ ] T017 [US3] Test non-whitelisted endpoint returns ValidationError (not API 404)
-- [ ] T018 [US3] Verify error message includes "Invalid endpoint" with endpoint path
-- [ ] T019 [US3] Confirm error response includes list of available endpoints (or reference to them)
-- [ ] T020 [US3] Verify malformed requests still return proper Zod validation errors
+- [x] T017 [US3] Test non-whitelisted endpoint returns ValidationError (not API 404)
+- [x] T018 [US3] Verify error message includes "Invalid endpoint" with endpoint path
+- [x] T019 [US3] Confirm error response includes list of available endpoints (or reference to them)
+- [x] T020 [US3] Verify malformed requests still return proper Zod validation errors
 
 **Checkpoint**: Error handling provides clear, actionable feedback
 
@@ -89,11 +89,11 @@
 
 ### Implementation for User Story 4
 
-- [ ] T021 [US4] Review tests/fixtures/test-data.ts for endpoints that now pass validation
-- [ ] T022 [US4] Search for validation mocking in test files (grep for "validateEndpoint" or mocking patterns)
-- [ ] T023 [US4] Remove any validation mocking that is no longer needed for whitelisted endpoints
-- [ ] T024 [US4] Update test fixtures to use newly whitelisted endpoints (if not already)
-- [ ] T025 [US4] Run full test suite and verify all tests pass
+- [x] T021 [US4] Review tests/fixtures/test-data.ts for endpoints that now pass validation
+- [x] T022 [US4] Search for validation mocking in test files (grep for "validateEndpoint" or mocking patterns)
+- [x] T023 [US4] Remove any validation mocking that is no longer needed for whitelisted endpoints
+- [x] T024 [US4] Update test fixtures to use newly whitelisted endpoints (if not already)
+- [x] T025 [US4] Run full test suite and verify all tests pass
 
 **Checkpoint**: Test suite runs cleanly with expanded whitelist
 
@@ -107,11 +107,11 @@
 
 ### Implementation for User Story 5
 
-- [ ] T026 [P] [US5] Update README.md with section on endpoint validation approach
-- [ ] T027 [P] [US5] Add list of all 16 whitelisted endpoints to README.md
-- [ ] T028 [P] [US5] Document process for adding new endpoints when API evolves
-- [ ] T029 [P] [US5] Update CHANGELOG.md to move expanded endpoints from [Unreleased] to next version
-- [ ] T030 [US5] Add inline code comments in src/config/endpoints.ts explaining the security approach
+- [x] T026 [P] [US5] Update README.md with section on endpoint validation approach
+- [x] T027 [P] [US5] Add list of all 16 whitelisted endpoints to README.md
+- [x] T028 [P] [US5] Document process for adding new endpoints when API evolves
+- [x] T029 [P] [US5] Update CHANGELOG.md to move expanded endpoints from [Unreleased] to next version
+- [x] T030 [US5] Add inline code comments in src/config/endpoints.ts explaining the security approach
 
 **Checkpoint**: Documentation is complete and accurate
 
@@ -121,12 +121,12 @@
 
 **Purpose**: Final verification that all user stories work together
 
-- [ ] T031 [P] Run integration test scenarios from contracts/api-behavior.md
-- [ ] T032 [P] Verify performance requirements (< 2 seconds for valid endpoints)
-- [ ] T033 [P] Verify security validations remain active (Zod schemas, sanitization)
-- [ ] T034 Test edge cases from spec.md (malformed requests, API downtime simulation, empty results)
-- [ ] T035 [P] Run quickstart.md validation workflow
-- [ ] T036 [P] Update version number if ready for release (e.g., from 0.1.0 to 0.2.0)
+- [x] T031 [P] Run integration test scenarios from contracts/api-behavior.md
+- [x] T032 [P] Verify performance requirements (< 2 seconds for valid endpoints)
+- [x] T033 [P] Verify security validations remain active (Zod schemas, sanitization)
+- [x] T034 Test edge cases from spec.md (malformed requests, API downtime simulation, empty results)
+- [x] T035 [P] Run quickstart.md validation workflow
+- [x] T036 [P] Update version number if ready for release (e.g., from 0.1.0 to 0.2.0)
 
 ---
 
@@ -234,13 +234,13 @@ Task T030: "Add code comments"
 
 | Success Criteria | Verified By | Status |
 |-----------------|-------------|---------|
-| SC-001: fall-enrollment returns data in < 2s | T005 | Pending |
-| SC-002: All 11 IPEDS endpoints work | T005-T011 | Pending |
-| SC-003: Invalid endpoints return validation errors | T017-T018 | Pending |
-| SC-004: Zero code changes for new API endpoints | T026-T028 (documentation) | Pending |
-| SC-005: 4 original endpoints still work | T012-T015 | Pending |
-| SC-006: Test fixtures work without mocking | T021-T025 | Pending |
-| SC-008: 90% of queries now succeed | T005-T011 (verify unblocked) | Pending |
+| SC-001: fall-enrollment returns data in < 2s | T005 | ✅ Complete |
+| SC-002: All 11 IPEDS endpoints work | T005-T011 | ✅ Complete |
+| SC-003: Invalid endpoints return validation errors | T017-T018 | ✅ Complete |
+| SC-004: Zero code changes for new API endpoints | T026-T028 (documentation) | ✅ Complete |
+| SC-005: 4 original endpoints still work | T012-T015 | ✅ Complete |
+| SC-006: Test fixtures work without mocking | T021-T025 | ✅ Complete |
+| SC-008: 90% of queries now succeed | T005-T011 (verify unblocked) | ✅ Complete |
 
 ---
 
