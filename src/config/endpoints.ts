@@ -26,6 +26,7 @@ export interface ApiEndpoint {
  * Available API endpoints with metadata
  */
 export const AVAILABLE_ENDPOINTS: ApiEndpoint[] = [
+  // CCD Endpoints (K-12 Schools)
   {
     level: 'schools',
     source: 'ccd',
@@ -50,13 +51,102 @@ export const AVAILABLE_ENDPOINTS: ApiEndpoint[] = [
     yearsAvailable: '1986–2022',
   },
   {
+    level: 'school-districts',
+    source: 'ccd',
+    topic: 'directory',
+    mainFilters: ['year'],
+    yearsAvailable: '1986–2022',
+  },
+
+  // IPEDS Endpoints (Higher Education)
+  {
     level: 'college-university',
     source: 'ipeds',
     topic: 'directory',
     mainFilters: ['year'],
     yearsAvailable: '1980, 1984–2022',
   },
-  // Additional endpoints can be added here
+  {
+    level: 'college-university',
+    source: 'ipeds',
+    topic: 'institutional-characteristics',
+    mainFilters: ['year', 'unitid'],
+    yearsAvailable: '1980, 1984–2022',
+  },
+  {
+    level: 'college-university',
+    source: 'ipeds',
+    topic: 'fall-enrollment',
+    mainFilters: ['year', 'unitid', 'level_of_study'],
+    yearsAvailable: '1980, 1984–2022',
+  },
+  {
+    level: 'college-university',
+    source: 'ipeds',
+    topic: 'enrollment-full-time-equivalent',
+    mainFilters: ['year', 'unitid'],
+    yearsAvailable: '1980, 1984–2022',
+  },
+  {
+    level: 'college-university',
+    source: 'ipeds',
+    topic: 'completions-cip-2',
+    subtopic: ['award_level', 'race', 'sex'],
+    mainFilters: ['year', 'unitid', 'cipcode', 'award_level'],
+    yearsAvailable: '1980, 1984–2022',
+  },
+  {
+    level: 'college-university',
+    source: 'ipeds',
+    topic: 'completions-cip-6',
+    subtopic: ['award_level', 'race', 'sex'],
+    mainFilters: ['year', 'unitid', 'cipcode', 'award_level'],
+    yearsAvailable: '1980, 1984–2022',
+  },
+  {
+    level: 'college-university',
+    source: 'ipeds',
+    topic: 'sfa-grants-and-net-price',
+    mainFilters: ['year', 'unitid'],
+    yearsAvailable: '1980, 1984–2022',
+  },
+  {
+    level: 'college-university',
+    source: 'ipeds',
+    topic: 'admissions-enrollment',
+    mainFilters: ['year', 'unitid', 'sex'],
+    yearsAvailable: '1980, 1984–2022',
+  },
+  {
+    level: 'college-university',
+    source: 'ipeds',
+    topic: 'admissions-requirements',
+    mainFilters: ['year', 'unitid'],
+    yearsAvailable: '1980, 1984–2022',
+  },
+  {
+    level: 'college-university',
+    source: 'ipeds',
+    topic: 'outcome-measures',
+    mainFilters: ['year', 'unitid'],
+    yearsAvailable: '2015–2022',
+  },
+  {
+    level: 'college-university',
+    source: 'ipeds',
+    topic: 'finance',
+    mainFilters: ['year', 'unitid'],
+    yearsAvailable: '1980, 1984–2022',
+  },
+  {
+    level: 'college-university',
+    source: 'ipeds',
+    topic: 'enrollment',
+    subtopic: ['race', 'sex'],
+    mainFilters: ['year', 'unitid'],
+    yearsAvailable: '1980, 1984–2022',
+  },
+  // Additional endpoints can be added here as discovered
 ];
 
 /**

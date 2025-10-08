@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+#### Expanded Endpoint Support
+- Added 11 new IPEDS (higher education) endpoints to the validation whitelist
+- Added missing CCD endpoint (`school-districts/ccd/directory`) from test fixtures
+- Comprehensive support for IPEDS data including:
+  - `institutional-characteristics` - Detailed institutional data
+  - `fall-enrollment` - Fall term enrollment counts
+  - `enrollment` - General enrollment with demographics
+  - `enrollment-full-time-equivalent` - FTE enrollment calculations
+  - `admissions-enrollment` - Admissions and first-year enrollment
+  - `admissions-requirements` - Admissions policies
+  - `completions-cip-2` - Degrees by 2-digit CIP code
+  - `completions-cip-6` - Degrees by 6-digit CIP code
+  - `outcome-measures` - Graduation and retention rates
+  - `sfa-grants-and-net-price` - Financial aid and net price
+  - `finance` - Institutional financial data
+
+### Changed
+- Updated `AVAILABLE_ENDPOINTS` array from 4 to 16 verified endpoints
+- Expanded IPEDS coverage from 1 endpoint to 12 endpoints (12x increase)
+- Test fixtures now work without validation mocking
+
+### Fixed
+- Resolved issue where 90% of higher education queries were blocked by validation
+- Fixed test fixture incompatibility with endpoint validation
+- Enabled access to Florida International University enrollment data (user's original use case)
+
 ## [0.1.0] - 2025-01-08
 
 ### Added
